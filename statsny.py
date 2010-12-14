@@ -16,10 +16,10 @@ class Collector(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         # print "received %r from %s:%d" % (data, host, port)
         data = json.loads(data)
-        simple_path = data['simplePath']
-        stats.incr(simple_path)
-        stats.incr("%s:%s" % ((data['code'] / 100), simple_path))
-        stats.add_timing(simple_path, data['elapsed'])
+        endpoint = data['endpoint']
+        stats.incr(endpoint)
+        stats.incr("%s:%s" % ((data['code'] / 100), endpoint))
+        stats.add_timing(endpoint, data['elapsed'])
         for k, v in data['stats'].items():
             stats.add_timing(k, v)
 
