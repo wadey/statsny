@@ -1,0 +1,12 @@
+# Defaults for statsny initscript
+# sourced by /etc/init.d/statsny
+# installed at /etc/default/statsny by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""
+
+RUN=no
