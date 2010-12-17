@@ -13,7 +13,7 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
  python-twisted-web,
  python-setuptools,
- python-ostrich (>= 0.2.5)
+ python-ostrich (>= 0.2.6)
 Recommends: nginx
 Description: Statsny realtime stats collector
  A web-enabled python-ostrich, submit data with UDP and

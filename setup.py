@@ -21,4 +21,4 @@ setup(name=PKG,
       version=version,
       packages=find_packages(),
       install_requires=["twisted",
-                        "ostrich"])
+                        "ostrich>=0.2.6"])
