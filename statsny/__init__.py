@@ -27,7 +27,7 @@ class Collector(DatagramProtocol):
     def add_stats(self, data):
         for k, v in data['timings'].iteritems():
             if v['count'] > 0:
-                stats.add_timing(TimingStat.from_raw_dict(v))
+                stats.add_timing(k, TimingStat.from_raw_dict(v))
         for k, v in data['counters'].iteritems():
             if v > 0:
                 stats.incr(k, v)
