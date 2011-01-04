@@ -5,6 +5,7 @@ from twisted.web import server
 from twisted.application import service, internet
 
 from ostrich import stats
+from ostrich.timing import TimingStat
 from ostrich.twisted import StatsTimeSeriesResource
 from ostrich.histogram import Histogram
 
@@ -17,8 +18,22 @@ Histogram.BUCKET_OFFSETS = [1, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101, 121, 141
 
 class Collector(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
-        # print "received %r from %s:%d" % (data, host, port)
         data = json.loads(data)
+        if data.has_key('batch'):
+            self.add_stats(data['batch'])
+        else:
+            self.add_request_stats(data)
+
+    def add_stats(self, data):
+        for k, v in data['timings'].iteritems():
+            if v['count'] > 0:
+                stats.add_timing(TimingStat.from_raw_dict(v))
+        for k, v in data['counters'].iteritems():
+            if v > 0:
+                stats.incr(k, v)
+
+    def add_request_stats(self, data):
+        # print "received %r from %s:%d" % (data, host, port)
         endpoint = data['endpoint']
         method = data['method']
         code = data['code']
