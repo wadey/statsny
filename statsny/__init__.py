@@ -1,12 +1,12 @@
 import json
 
 from twisted.internet.protocol import DatagramProtocol
-from twisted.web import server
+from twisted.web import server, resource
 from twisted.application import service, internet
 
 from ostrich import stats
 from ostrich.timing import TimingStat
-from ostrich.twisted import StatsTimeSeriesResource
+from ostrich.twisted import respond, StatsTimeSeriesResource
 from ostrich.histogram import Histogram
 
 import statsny.settings as settings
@@ -16,7 +16,12 @@ import statsny.settings as settings
 # Good histogram for data that we expect to be under 1 second
 Histogram.BUCKET_OFFSETS = [1, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 551, 601, 651, 701, 751, 801, 851, 901, 951, 1001, 1251, 1501, 1751, 2001, 2251, 2501, 2751, 3001, 3501, 4001, 4501, 5001, 5501, 6001, 7001, 8001, 9001, 10001, 11001, 12001, 15001, 30001, 60001, 120001, 240001, 480001, 3600001] 
 
+RESPONSE_CACHE_LENGTH = 10
+
 class Collector(DatagramProtocol):
+    def __init__(self):
+        self.responses = {}
+
     def datagramReceived(self, data, (host, port)):
         data = json.loads(data)
         if data.has_key('batch'):
@@ -38,17 +43,45 @@ class Collector(DatagramProtocol):
         method = data['method']
         code = data['code']
         simple_code = str(code / 100)
-        endpoint_method = "%s:%s" % (method, endpoint)
+        method_endpoint = "%s:%s" % (method, endpoint)
+        method_code_endpoint = "%s:%s:%s" % (method, simple_code, endpoint)
 
         stats.incr(simple_code)
-        stats.incr(endpoint_method)
+        stats.incr(method_endpoint)
+        stats.incr(method_code_endpoint)
         stats.incr("%s:%s" % (method, simple_code))
-        stats.incr("%s:%s:%s" % (method, simple_code, endpoint))
-        stats.add_timing(endpoint_method, data['elapsed'])
+        stats.add_timing(method_endpoint, data['elapsed'])
+
         for k, v in data['stats'].items():
             stats.add_timing("stats:%s" % k, v)
 
+        if not self.responses.has_key(method_code_endpoint):
+            self.responses[method_code_endpoint] = [data]
+        else:
+            # TODO optimize this?
+            self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:RESPONSE_CACHE_LENGTH-1]
+        print self.responses
+
+class ResponseResource(resource.Resource):
+    isLeaf = True
+
+    def __init__(self, collector):
+        self.collector = collector
+
+    def render_GET(self, request):
+        if len(request.postpath) == 0:
+            return respond(request, {})
+        else:
+            name = '/'.join(request.postpath)
+            data = self.collector.responses.get(name, [])
+            return respond(request, {'name': name, 'responses': data})
+
+collector = Collector()
+
+root = StatsTimeSeriesResource()
+root.putChild('responses', ResponseResource(collector))
+
 application = service.Application("Statsny")
-site = server.Site(StatsTimeSeriesResource())
+site = server.Site(root)
 internet.TCPServer(settings.HTTP_PORT, site).setServiceParent(application)
-internet.UDPServer(settings.UDP_PORT, Collector()).setServiceParent(application)
+internet.UDPServer(settings.UDP_PORT, collector).setServiceParent(application)
