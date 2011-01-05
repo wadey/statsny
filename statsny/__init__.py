@@ -60,7 +60,6 @@ class Collector(DatagramProtocol):
         else:
             # TODO optimize this?
             self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:RESPONSE_CACHE_LENGTH-1]
-        print self.responses
 
 class ResponseResource(resource.Resource):
     isLeaf = True
