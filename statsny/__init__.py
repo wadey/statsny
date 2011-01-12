@@ -16,8 +16,6 @@ import statsny.settings as settings
 # Good histogram for data that we expect to be under 1 second
 Histogram.BUCKET_OFFSETS = [1, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 551, 601, 651, 701, 751, 801, 851, 901, 951, 1001, 1251, 1501, 1751, 2001, 2251, 2501, 2751, 3001, 3501, 4001, 4501, 5001, 5501, 6001, 7001, 8001, 9001, 10001, 11001, 12001, 15001, 30001, 60001, 120001, 240001, 480001, 3600001] 
 
-RESPONSE_CACHE_LENGTH = 10
-
 class Collector(DatagramProtocol):
     def __init__(self):
         self.responses = {}
@@ -59,7 +57,7 @@ class Collector(DatagramProtocol):
             self.responses[method_code_endpoint] = [data]
         else:
             # TODO optimize this?
-            self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:RESPONSE_CACHE_LENGTH-1]
+            self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:settings.RESPONSE_CACHE_LENGTH-1]
 
 class ResponseResource(resource.Resource):
     isLeaf = True
