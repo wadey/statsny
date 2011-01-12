@@ -14,7 +14,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  python-twisted-web,
  python-setuptools,
  python-ostrich (>= 0.3.2)
-Recommends: nginx
 Description: Statsny realtime stats collector
  A web-enabled python-ostrich, submit data with UDP and
  grab results with HTTP
