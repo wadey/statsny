@@ -55,6 +55,8 @@ class Collector(DatagramProtocol):
         stats.incr(method_endpoint)
         stats.incr(method_code_endpoint)
         stats.incr("%s:%s" % (method, simple_code))
+        stats.incr(endpoint)
+        stats.incr("%s:%s" % (simple_code, endpoint))
         stats.add_timing(method_endpoint, data['elapsed'])
 
         for k, v in data['stats'].items():
