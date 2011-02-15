@@ -27,8 +27,20 @@ class Collector(DatagramProtocol):
         data = json.loads(data)
         if data.has_key('batch'):
             self.add_stats(data['batch'])
-        else:
+        elif data.has_key('endpoint'):
             self.add_request_stats(data)
+        else:
+            self.add_stat(data)
+
+    def add_stat(self, data):
+        if data.has_key('stats'):
+            for k, v in data['stats'].items():
+                stats.add_timing(k, v)
+
+        if data.has_key('elapsed'):
+            stats.add_timing(data['name'], data['elapsed'])
+        else:
+            stats.incr(data['name'])
 
     def add_stats(self, data):
         # assume they are using the standard ostrich histogram buckets if
