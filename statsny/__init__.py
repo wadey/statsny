@@ -1,8 +1,9 @@
 import json
 
-from twisted.internet.protocol import DatagramProtocol
+from twisted.internet.protocol import DatagramProtocol, ServerFactory
 from twisted.web import server, resource
 from twisted.application import service, internet
+from twisted.protocols.basic import LineReceiver
 
 from ostrich import stats
 from ostrich.timing import TimingStat
@@ -23,7 +24,7 @@ class Collector(DatagramProtocol):
     def __init__(self):
         self.responses = {}
 
-    def datagramReceived(self, data, (host, port)):
+    def lineReceived(self, data):
         data = json.loads(data)
         if data.has_key('batch'):
             self.add_stats(data['batch'])
@@ -39,8 +40,10 @@ class Collector(DatagramProtocol):
 
         if data.has_key('elapsed'):
             stats.add_timing(data['name'], data['elapsed'])
-        else:
+        elif data.has_key('name'):
             stats.incr(data['name'])
+        else:
+            pass
 
     def add_stats(self, data):
         # assume they are using the standard ostrich histogram buckets if
@@ -81,6 +84,23 @@ class Collector(DatagramProtocol):
             # TODO optimize this?
             self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:settings.RESPONSE_CACHE_LENGTH-1]
 
+class UDPCollector(DatagramProtocol):
+    def __init__(self, collector):
+        self.collector = collector
+
+    def datagramReceived(self, data, (host, port)):
+        collector.lineReceived(data)
+
+class TCPCollectorProtocol(LineReceiver):
+    def lineReceived(self, line):
+        self.factory.collector.lineReceived(line)
+
+class TCPCollectorFactory(ServerFactory):
+    protocol = TCPCollectorProtocol
+
+    def __init__(self, collector):
+        self.collector = collector
+
 class ResponseResource(resource.Resource):
     isLeaf = True
 
@@ -96,6 +116,8 @@ class ResponseResource(resource.Resource):
             return respond(request, {'name': name, 'responses': data})
 
 collector = Collector()
+udpCollector = UDPCollector(collector)
+tcpCollector = TCPCollectorFactory(collector)
 
 root = StatsTimeSeriesResource()
 root.putChild('responses', ResponseResource(collector))
@@ -103,4 +125,5 @@ root.putChild('responses', ResponseResource(collector))
 application = service.Application("Statsny")
 site = server.Site(root)
 internet.TCPServer(settings.HTTP_PORT, site).setServiceParent(application)
-internet.UDPServer(settings.UDP_PORT, collector).setServiceParent(application)
+internet.TCPServer(settings.TCP_PORT, tcpCollector).setServiceParent(application)
+internet.UDPServer(settings.UDP_PORT, udpCollector).setServiceParent(application)
