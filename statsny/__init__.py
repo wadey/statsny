@@ -77,6 +77,12 @@ class Collector(DatagramProtocol):
 
         for k, v in data['stats'].items():
             stats.add_timing("stats:%s" % k, v)
+            stats.incr("stats:%s" % k)
+
+        for group, v in data['groups'].items():
+            stats.incr('%s:%s' % (group, v))
+            stats.incr('%s:%s:%s' % (group, simple_code, v))
+            stats.add_timing("%s:%s" % (group, v), data['elapsed'])
 
         if not self.responses.has_key(method_code_endpoint):
             self.responses[method_code_endpoint] = [data]
