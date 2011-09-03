@@ -84,11 +84,15 @@ class Collector(DatagramProtocol):
             stats.incr('%s:%s:%s' % (group, simple_code, v))
             stats.add_timing("%s:%s" % (group, v), data['elapsed'])
 
-        if not self.responses.has_key(method_code_endpoint):
-            self.responses[method_code_endpoint] = [data]
+        self.add_response(method_code_endpoint, data)
+        self.add_response(simple_code, data)
+
+    def add_response(self, key, data):
+        if not self.responses.has_key(key):
+            self.responses[key] = [data]
         else:
             # TODO optimize this?
-            self.responses[method_code_endpoint] = [data] + self.responses[method_code_endpoint][:settings.RESPONSE_CACHE_LENGTH-1]
+            self.responses[key] = [data] + self.responses[key][:settings.RESPONSE_CACHE_LENGTH-1]
 
 class UDPCollector(DatagramProtocol):
     def __init__(self, collector):
