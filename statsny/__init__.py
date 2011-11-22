@@ -1,4 +1,7 @@
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from twisted.internet.protocol import DatagramProtocol, ServerFactory
 from twisted.web import server, resource
