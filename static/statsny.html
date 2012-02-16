@@ -1,0 +1,299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+  <script type="text/javascript" src="js/underscore-min.js"></script>
+  <script type="text/javascript" src="js/protovis-r3.2.js"></script>
+  <script type="text/javascript" src="js/statsny.js"></script>
+</head>
+<body>
+<input id="autorefresh" name="autorefresh" value="autorefresh" type="checkbox" /><label for="autorefresh">autorefresh</label>
+<div id="center"><div id="fig">
+    <script type="text/javascript+protovis">
+/* Sizing and scales. */
+var w = 600,
+    h = 200,
+    gw = 100,
+    lw = 300,
+    bh = 24,
+    x1 = pv.Scale.linear(0, 1000).range(0, 2 * w / 3),
+    x2 = pv.Scale.linear(1000, 10000).range(2 * w / 3, w),
+    x = function(v) {return Math.round(v < 1000 ? x1(v) : x2(v))},
+    cl = function(e) {return (e.has5xx ? '#d62728' : '#000000')},
+    c1 = function(v) {return (v < 1000 ? "#1f77b4" : "#ff7f0e")},
+    c2 = function(v) {return (v < 1000 ? "#4397c5" : "#ff8f0e")},
+    c3 = function(v) {return (v < 1000 ? "#7da7d6" : "#ffab78")},
+    c4 = function(v) {return (v < 1000 ? "#aec7e8" : "#ffbb78")},
+        colors = {
+            2: '#1f77b4',
+            3: '#2ca02c',
+            4: '#ff7f0e',
+            5: '#d62728'
+        }
+
+var resGraphs = {};
+
+// TODO This code needs a cleanup badly, too much experimentation
+function resGraph(key, index, data) {
+    function findMax() {
+        // Find the max of the sums at each y value
+        return _.max(_.map(data[0], function(e, i) {
+            return _.reduce(data, function(sum, d) { return sum + d[i][1] }, 0);
+        }));
+    }
+
+    // Reduce the resolution of the graphs
+    var resScale = 5
+    _.each(data, function(chunk, i) {
+        var squished = []
+        _.each(chunk, function(e, j) {
+            var squishIndex = 0 | j / resScale
+
+            // squish in the last items
+            if (j === chunk.length - 1) squishIndex--;
+
+            if (!squished[squishIndex]) {
+                squished[squishIndex] = e
+            } else {
+                squished[squishIndex][1] += e[1]
+            }
+        })
+        data[i] = squished
+    })
+
+    var gx = pv.Scale.linear(data[0][0][0], data[0][data[0].length-1][0]).range(0, gw - 5),
+        gy = pv.Scale.linear(0, findMax()).range(0, bh - 10)
+
+            window.gx = gx;
+
+    var g = resGraphs[key]
+    if (!g) {
+        g = resGraphs[key] = vis.add(pv.Panel)
+        g._l = g.add(pv.Layout.Stack)
+        g._a = g._l.layer.add(pv.Area)
+    }
+    g._data = data;
+    g._index = index;
+
+    /* The area with top line. */
+    g.top(function(d) g._index * bh - 4)
+        .height(bh)
+        .left(-gw)
+        .data(function() g._data)
+
+    g._l.layers(function() g._data)
+        //.top(function(d) index * bh + 10)
+        .x(function(d) gx(d[0]))
+        .y(function(d) gy(d[1]))
+        .bottom(2)
+
+    g._a.fillStyle(function(d) colors[d.status])
+        //.strokeStyle(function() {return this.fillStyle().alpha(.5)})
+        //.lineWidth(0.1)
+}
+
+/* The root panel. */
+var vis = new pv.Panel()
+    .width(w)
+    .height(function() h)
+    .margin(20)
+    .left(lw + gw);
+
+/* Second lines. */
+vis.add(pv.Rule)
+    .data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    .left(function(d) x(d * 1000) + 1)
+    .top(0).bottom(20)
+    .lineWidth(2).strokeStyle("grey")
+  .anchor("bottom").add(pv.Label)
+    .text(function(d) d + "s");
+
+/* MS lines. */
+vis.add(pv.Rule)
+    .data([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    .left(function(d) x(d * 100) + 1)
+    .top(0).bottom(20)
+    .lineWidth(2).strokeStyle("lightgrey")
+  .anchor("bottom").add(pv.Label)
+    .text(function(d) "." + d);
+
+
+var bar = vis.add(pv.Bar)
+    .data([])
+    .top(function(d) (this.index + d.offset) * bh + 10)
+    .height(bh - 22)
+    .width(function(d) x(d.p999))
+    .fillStyle(function(d) c4(d.p999))
+    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+
+bar.add(pv.Bar)
+    .top(function(d) (this.index + d.offset) * bh + 9)
+    .height(bh - 20)
+    .width(function(d) x(d.p99))
+    .fillStyle(function(d) c3(d.p99))
+    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+
+bar.add(pv.Bar)
+    .top(function(d) (this.index + d.offset) * bh + 5)
+    .height(bh - 12)
+    .width(function(d) x(d.p75))
+    .fillStyle(function(d) c2(d.p75))
+    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+
+bar.add(pv.Bar)
+    .top(function(d) (this.index + d.offset) * bh + 3)
+    .height(bh - 8)
+    .width(function(d) x(d.p50))
+    .fillStyle(function(d) c1(d.p50))
+    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+
+bar.anchor("left").add(pv.Label)
+    .left(-gw)
+    .font("bold 12px menlo,monospace")
+    .textAlign("right")
+    .textBaseline("middle")
+    .textStyle(function(e) cl(e))
+    .text(function(d) d.name + " (" + d.count + ")")
+
+bar.add(pv.Panel)
+    .left(-(gw+lw))
+    .top(function(d) (this.index + d.offset) * bh)
+    .width(lw)
+    .height(bh)
+    .fillStyle("rgba(0,0,0,.001)")
+    .cursor("pointer")
+    .event("click", function(d) { return window.location = "statsny-endpoint.html?" + d.key })
+
+vis.render();
+
+function sortFunction(a, b) {
+    if (a.offset === b.offset) {
+        if (parseInt(a.key)) {
+            return (parseInt(a.key) < parseInt(b.key) ? -1 : 1)
+        }
+        if (a.name < b.name) {
+            return -1;
+        } else if (a.name > b.name) {
+            return 1;
+        }
+        return 0;
+    }
+    return a.offset - b.offset;
+}
+
+function refresh(force) {
+    if (!force && !$('#autorefresh').attr('checked')) {
+        return
+    }
+    $.getJSON('/statsny/combined?callback=?', function(data) {
+        if (window.console) console.log(data);
+        var timings = data.timings;
+        var l = []
+
+        // TODO this is ugly
+        _.each([2, 3, 4, 5], function(n) {
+            var e = []
+            e.name = n + 'XX'
+            e.key = n.toString()
+            e.count = data.counters[e.key]
+            e.offset = 0
+            if (e.count > 0) {
+                l.push(e)
+            }
+        })
+
+        // TODO: use jquery or underscore
+        for (k in timings) {
+            if (k.indexOf(':') >= 0) {
+                name = k.replace(/^GET:/, '')
+                        .replace(/stats:/, '')
+                        .replace(/^([A-Z]+):/, '$1 ')
+                timings[k].name = name
+                timings[k].key = k
+                timings[k].offset = 1
+                if (k.indexOf('GET:') !== 0) {
+                    timings[k].offset++
+                }
+                if (k.indexOf('_ratelimited_') >= 0
+                    || k.indexOf('_disabled_') >= 0) {
+                  timings[k].offset += 2
+                  // TODO holy ugly
+                  if (k.indexOf('GET:') !== 0) {
+                    // We want to group these with the other _ratelimited_
+                    timings[k].offset--
+                  }
+                }
+                if (k.indexOf('product:') === 0) {
+                    timings[k].offset += 2
+                }
+                if (k.indexOf('stats:') === 0) {
+                    timings[k].offset += 3
+                }
+                var parts = k.split(/:/, 2)
+                if (data.counters[parts[0] + ':5:' + parts[1]]) {
+                    timings[k].has5xx = true
+                }
+                if (timings[k].count > 0) {
+                    l.push(timings[k])
+                } else {
+                    if (resGraphs[k]) {
+                        resGraphs[k]._data = [];
+                    }
+                }
+            }
+        }
+        l.sort(sortFunction);
+        fetchGraphs(l)
+        if (window.console) console.log(l);
+        bar.data(l);
+        h = bh * (l.length + 6);
+        vis.render();
+    });
+}
+
+function fetchGraphs(list) {
+    var i = 0;
+    (function next() {
+      if (i >= list.length) return;
+
+      var e = list[i]
+      e.index = i;
+      i++;
+      if (e.key.indexOf('stats:') !== 0) {
+          fetchCounterGraphs(e, next);
+      } else {
+          next()
+      }
+    })()
+}
+
+function fetchCounterGraphs(e, next) {
+    var parts = e.key.split(/:/, 2),
+        method = parts[0],
+        endpoint = parts[1];
+
+    if (resGraphs[e.key]) {
+        resGraphs[e.key]._index = e.index;
+        vis.render()
+    }
+
+    if (endpoint) {
+        statsny.getEndpointGraphData(method, endpoint, function(data) {
+            resGraph(e.key, e.index + e.offset, data);
+            vis.render()
+        });
+    } else {
+        // For 5XX
+        statsny.getSimpleGraphData(method, parseInt(e.key), function(data) {
+            resGraph(e.key, e.index + e.offset, data);
+            vis.render()
+        });
+    }
+    next()
+}
+setInterval(refresh, 10000);
+refresh(true);
+  </script>
+</body>
+</html>
