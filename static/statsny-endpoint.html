@@ -47,10 +47,10 @@ function fetchResponses(key, elem, endpoint) {
             span.mouseover(function() { span.css('background', '#ffd'); });
             span.mouseout(function() { span.css('background', ''); });
             span.click(function() { ul.toggle(); });
-            function parseObject(o, ul) {
+            function parseObject(o, ul, pk) {
                 $.each(o, function(k, v) {
                     if ($.isPlainObject(v)) {
-                        parseObject(v, $("<ul>").appendTo($("<li>").text(k + ":").appendTo(ul)));
+                        parseObject(v, $("<ul>").appendTo($("<li>").text(k + ":").appendTo(ul)), k);
                     } else {
                         if (k === "ip") {
                             ul.append($('<li>').text(k + ": ").append($("<a>")
@@ -58,6 +58,8 @@ function fetchResponses(key, elem, endpoint) {
                                     .text(JSON.stringify(v))));
                         } else if (k == "elapsed") {
                             span.text(span.text() + " - " + JSON.stringify(v) + "ms")
+                        } else if (pk == "stats") {
+                            ul.append($('<li>').text(k + ": " + JSON.stringify(v) + "ms"));
                         } else {
                             ul.append($('<li>').text(k + ": " + JSON.stringify(v)));
                         }

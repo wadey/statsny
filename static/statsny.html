@@ -6,8 +6,17 @@
   <script type="text/javascript" src="js/underscore-min.js"></script>
   <script type="text/javascript" src="js/protovis-r3.2.js"></script>
   <script type="text/javascript" src="js/statsny.js"></script>
+  <style>
+    body {
+      font-family: helvetica
+    }
+  </style>
 </head>
 <body>
+  <div style="overflow: auto; width: 100%">
+<h1 style='float: right'>Statsny</h1>
+<h2 style='float: left'>API Stats for the last hour</h2>
+</div>
 <input id="autorefresh" name="autorefresh" value="autorefresh" type="checkbox" /><label for="autorefresh">autorefresh</label>
 <div id="center"><div id="fig">
     <script type="text/javascript+protovis">
@@ -200,16 +209,16 @@ function refresh(force) {
         var l = []
 
         // TODO this is ugly
-        _.each([2, 3, 4, 5], function(n) {
-            var e = []
-            e.name = n + 'XX'
-            e.key = n.toString()
-            e.count = data.counters[e.key]
-            e.offset = 0
-            if (e.count > 0) {
-                l.push(e)
-            }
-        })
+        // _.each([2, 3, 4, 5], function(n) {
+        //     var e = []
+        //     e.name = n + 'XX'
+        //     e.key = n.toString()
+        //     e.count = data.counters[e.key]
+        //     e.offset = 0
+        //     if (e.count > 0) {
+        //         l.push(e)
+        //     }
+        // })
 
         // TODO: use jquery or underscore
         for (k in timings) {
@@ -249,11 +258,28 @@ function refresh(force) {
                         resGraphs[k]._data = [];
                     }
                 }
+            } else if (k.length === 1 && !isNaN(parseInt(k))) {
+                timings[k].name = k + 'XX'
+                timings[k].key = k
+                timings[k].offset = 0
+                timings[k].has5xx = k === "5"
+                if (timings[k].count > 0) {
+                  l.push(timings[k])
+                } else {
+                    if (resGraphs[k]) {
+                        resGraphs[k]._data = [];
+                    }
+                }
             }
+
         }
         l.sort(sortFunction);
+        l.forEach(function(e) {
+            console.log(e.key, "-", e.name, "-", e.offset)
+        })
         fetchGraphs(l)
         if (window.console) console.log(l);
+        window.l = l
         bar.data(l);
         h = bh * (l.length + 6);
         vis.render();
