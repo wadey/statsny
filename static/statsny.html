@@ -12,13 +12,23 @@
 <div id="center"><div id="fig">
     <script type="text/javascript+protovis">
 /* Sizing and scales. */
+
+    function checkNaN(f) {
+      return function(i) {
+        if (isNaN(i)) {
+          return 0
+        }
+        return f(i)
+      }
+    }
+
 var w = 600,
     h = 200,
     gw = 100,
     lw = 300,
     bh = 24,
-    x1 = pv.Scale.linear(0, 1000).range(0, 2 * w / 3),
-    x2 = pv.Scale.linear(1000, 10000).range(2 * w / 3, w),
+    x1 = checkNaN(pv.Scale.linear(0, 1000).range(0, 2 * w / 3)),
+    x2 = checkNaN(pv.Scale.linear(1000, 10000).range(2 * w / 3, w)),
     x = function(v) {return Math.round(v < 1000 ? x1(v) : x2(v))},
     cl = function(e) {return (e.has5xx ? '#d62728' : '#000000')},
     c1 = function(v) {return (v < 1000 ? "#1f77b4" : "#ff7f0e")},
@@ -65,8 +75,6 @@ function resGraph(key, index, data) {
     var gx = pv.Scale.linear(data[0][0][0], data[0][data[0].length-1][0]).range(0, gw - 5),
         gy = pv.Scale.linear(0, findMax()).range(0, bh - 10)
 
-            window.gx = gx;
-
     var g = resGraphs[key]
     if (!g) {
         g = resGraphs[key] = vis.add(pv.Panel)
@@ -76,7 +84,7 @@ function resGraph(key, index, data) {
     g._data = data;
     g._index = index;
 
-    /* The area with top line. */
+    // The area with top line.
     g.top(function(d) g._index * bh - 4)
         .height(bh)
         .left(-gw)
@@ -261,7 +269,7 @@ function fetchGraphs(list) {
       e.index = i;
       i++;
       if (e.key.indexOf('stats:') !== 0) {
-          fetchCounterGraphs(e, next);
+          setTimeout(fetchCounterGraphs, 1, e, next);
       } else {
           next()
       }
@@ -282,15 +290,16 @@ function fetchCounterGraphs(e, next) {
         statsny.getEndpointGraphData(method, endpoint, function(data) {
             resGraph(e.key, e.index + e.offset, data);
             vis.render()
+            setTimeout(next, 1);
         });
     } else {
         // For 5XX
         statsny.getSimpleGraphData(method, parseInt(e.key), function(data) {
             resGraph(e.key, e.index + e.offset, data);
             vis.render()
+            setTimeout(next, 1);
         });
     }
-    next()
 }
 setInterval(refresh, 10000);
 refresh(true);

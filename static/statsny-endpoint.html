@@ -57,7 +57,7 @@ function fetchResponses(key, elem, endpoint) {
                                     .attr('href', 'http://dl.dropbox.com/u/119351/ipmap.html#' + v)
                                     .text(JSON.stringify(v))));
                         } else if (k == "elapsed") {
-                            span.text(span.text() + " - " + JSON.stringify(v))
+                            span.text(span.text() + " - " + JSON.stringify(v) + "ms")
                         } else {
                             ul.append($('<li>').text(k + ": " + JSON.stringify(v)));
                         }
