@@ -4,7 +4,7 @@ except ImportError:
     import json
 
 from twisted.internet.protocol import DatagramProtocol, ServerFactory
-from twisted.web import server, resource
+from twisted.web import server, resource, static
 from twisted.application import service, internet
 from twisted.protocols.basic import LineReceiver
 
@@ -132,11 +132,14 @@ collector = Collector()
 udpCollector = UDPCollector(collector)
 tcpCollector = TCPCollectorFactory(collector)
 
-root = StatsTimeSeriesResource()
-root.putChild('responses', ResponseResource(collector))
+resource = StatsTimeSeriesResource()
+resource.putChild('responses', ResponseResource(collector))
+
+root = static.File(settings.STATIC_DIR)
+root.putChild('statsny', resource)
 
 application = service.Application("Statsny")
 site = server.Site(root)
-internet.TCPServer(settings.HTTP_PORT, site).setServiceParent(application)
-internet.TCPServer(settings.TCP_PORT, tcpCollector).setServiceParent(application)
-internet.UDPServer(settings.UDP_PORT, udpCollector).setServiceParent(application)
+internet.TCPServer(settings.HTTP_PORT, site, interface=settings.HTTP_INTERFACE).setServiceParent(application)
+internet.TCPServer(settings.TCP_PORT, tcpCollector, interface=settings.TCP_INTERFACE).setServiceParent(application)
+internet.UDPServer(settings.UDP_PORT, udpCollector, interface=settings.UDP_INTERFACE).setServiceParent(application)
