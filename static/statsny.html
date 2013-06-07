@@ -13,9 +13,9 @@
   </style>
 </head>
 <body>
-  <div style="overflow: auto; width: 100%">
-<h1 style='float: right'>Statsny</h1>
-<h2 style='float: left'>API Stats for the last hour</h2>
+<div style="overflow: auto; width: 100%">
+  <h1 style='float: right'>statsny</h1>
+  <h1 style='float: left'>API stats for the last hour</h1>
 </div>
 <input id="autorefresh" name="autorefresh" value="autorefresh" type="checkbox" /><label for="autorefresh">autorefresh</label>
 <div id="center"><div id="fig">
@@ -112,6 +112,7 @@ function resGraph(key, index, data) {
 
 /* The root panel. */
 var vis = new pv.Panel()
+    .def("i", -1)
     .width(w)
     .height(function() h)
     .margin(20)
@@ -142,28 +143,28 @@ var bar = vis.add(pv.Bar)
     .height(bh - 22)
     .width(function(d) x(d.p999))
     .fillStyle(function(d) c4(d.p999))
-    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
 
 bar.add(pv.Bar)
     .top(function(d) (this.index + d.offset) * bh + 9)
     .height(bh - 20)
     .width(function(d) x(d.p99))
     .fillStyle(function(d) c3(d.p99))
-    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
 
 bar.add(pv.Bar)
     .top(function(d) (this.index + d.offset) * bh + 5)
     .height(bh - 12)
     .width(function(d) x(d.p75))
     .fillStyle(function(d) c2(d.p75))
-    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
 
 bar.add(pv.Bar)
     .top(function(d) (this.index + d.offset) * bh + 3)
     .height(bh - 8)
     .width(function(d) x(d.p50))
     .fillStyle(function(d) c1(d.p50))
-    .title(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
 
 bar.anchor("left").add(pv.Label)
     .left(-gw)
@@ -173,6 +174,15 @@ bar.anchor("left").add(pv.Label)
     .textStyle(function(e) cl(e))
     .text(function(d) d.name + " (" + d.count + ")")
 
+// bar.anchor("left").add(pv.Label)
+//     .left(w)
+//     .font("bold 12px menlo,monospace")
+//     .textAlign("right")
+//     .textBaseline("middle")
+//     .textStyle(function(e) cl(e))
+//     .visible(function() vis.i() == this.index)
+//     .text(function(d) "50%: "+d.p50+"ms, 75%: "+d.p75+"ms, 99%: "+d.p99+"ms, 99.9%:" + d.p999 + "ms")
+// 
 bar.add(pv.Panel)
     .left(-(gw+lw))
     .top(function(d) (this.index + d.offset) * bh)
@@ -180,6 +190,8 @@ bar.add(pv.Panel)
     .height(bh)
     .fillStyle("rgba(0,0,0,.001)")
     .cursor("pointer")
+    // .event("mouseover", function() vis.i(this.index))
+    // .event("mouseout", function() vis.i(-1))
     .event("click", function(d) { return window.location = "statsny-endpoint.html?" + d.key })
 
 vis.render();
