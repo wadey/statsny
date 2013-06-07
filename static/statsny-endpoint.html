@@ -216,10 +216,10 @@ function render(data) {
 $(document).ready(function() {
     var fullEndpoint = location.search.substring(1);
     fullEndpoint = unescape(fullEndpoint)
-    var parts = fullEndpoint.split(/:/, 2);
+    var parts = fullEndpoint.split(/:/);
     $("#title").text(fullEndpoint);
     setTimeout(function() {
-        load(parts[0], parts[1]);
+        load(parts[0], parts.slice(1).join(':'));
     }, 1);
 });
   </script>

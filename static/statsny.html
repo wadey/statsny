@@ -205,7 +205,7 @@ function refresh(force) {
 
         // TODO: use jquery or underscore
         for (k in timings) {
-            if (k.indexOf(':') >= 0) {
+            if (k.indexOf(':') >= 0 && k.indexOf(':') <= 6) {
                 name = k.replace(/^GET:/, '')
                         .replace(/stats:/, '')
                         .replace(/^([A-Z]+):/, '$1 ')
@@ -230,8 +230,8 @@ function refresh(force) {
                 if (k.indexOf('stats:') === 0) {
                     timings[k].offset += 3
                 }
-                var parts = k.split(/:/, 2)
-                if (data.counters[parts[0] + ':5:' + parts[1]]) {
+                var parts = k.split(/:/)
+                if (data.counters[parts[0] + ':5:' + parts.slice(1).join(':')]) {
                     timings[k].has5xx = true
                 }
                 if (timings[k].count > 0) {
@@ -269,9 +269,9 @@ function fetchGraphs(list) {
 }
 
 function fetchCounterGraphs(e, next) {
-    var parts = e.key.split(/:/, 2),
+    var parts = e.key.split(/:/),
         method = parts[0],
-        endpoint = parts[1];
+        endpoint = parts.slice(1).join(':')
 
     if (resGraphs[e.key]) {
         resGraphs[e.key]._index = e.index;
