@@ -35,7 +35,7 @@ function formatDate(d) {
 }
 
 function fetchResponses(key, elem, endpoint) {
-    $.getJSON('/statsny/responses/'+key+'?callback=?', function(data) {
+    $.getJSON('/statsny/responses/'+encodeURIComponent(key)+'?callback=?', function(data) {
         _.each(data.responses, function(response) {
             response.timestamp = response.timestamp && new Date(response.timestamp);
             var path = (response.url || response.path).replace(/\?.*$/, '?...');
