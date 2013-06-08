@@ -2,7 +2,7 @@
 
 Ephemeral API stats.
 
-![](screenshot.png)
+![](screenshot.jpg)
 
 ## How to run
 
