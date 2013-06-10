@@ -55,6 +55,7 @@ var resGraphs = {};
 
 // TODO This code needs a cleanup badly, too much experimentation
 function resGraph(key, index, data) {
+    // console.log('resGraph', arguments)
     function findMax() {
         // Find the max of the sums at each y value
         return _.max(_.map(data[0], function(e, i) {
@@ -215,8 +216,9 @@ function refresh(force) {
     if (!force && !$('#autorefresh').attr('checked')) {
         return
     }
-    $.getJSON('/statsny/combined?callback=?', function(data) {
-        if (window.console) console.log(data);
+    $.getJSON('/statsny/combined?series=true&callback=?', function(data) {
+        window.data = data
+        // if (window.console) console.log(data);
         var timings = data.timings;
         var l = []
 
@@ -286,11 +288,11 @@ function refresh(force) {
 
         }
         l.sort(sortFunction);
-        l.forEach(function(e) {
-            console.log(e.key, "-", e.name, "-", e.offset)
-        })
-        fetchGraphs(l)
-        if (window.console) console.log(l);
+        // l.forEach(function(e) {
+        //     console.log(e.key, "-", e.name, "-", e.offset)
+        // })
+        drawGraphs(l)
+        // if (window.console) console.log(l);
         window.l = l
         bar.data(l);
         h = bh * (l.length + 6);
@@ -298,45 +300,75 @@ function refresh(force) {
     });
 }
 
-function fetchGraphs(list) {
+function drawGraphs(list) {
     var i = 0;
     (function next() {
-      if (i >= list.length) return;
+     if (i >= list.length) {
+       vis.render()
+       return
+     }
 
       var e = list[i]
       e.index = i;
       i++;
       if (e.key.indexOf('stats:') !== 0) {
-          setTimeout(fetchCounterGraphs, 1, e, next);
+          setTimeout(drawCounterGraphs, 1, e, next);
       } else {
           next()
       }
     })()
 }
 
-function fetchCounterGraphs(e, next) {
+function drawCounterGraphs(e, next) {
     var parts = e.key.split(/:/),
         method = parts[0],
         endpoint = parts.slice(1).join(':')
 
     if (resGraphs[e.key]) {
         resGraphs[e.key]._index = e.index;
-        vis.render()
+        // vis.render()
     }
 
     if (endpoint) {
-        statsny.getEndpointGraphData(method, endpoint, function(data) {
-            resGraph(e.key, e.index + e.offset, data);
-            vis.render()
-            setTimeout(next, 1);
+        // statsny.getEndpointGraphData(method, endpoint, function(data) {
+        //     console.log('data',data)
+        // })
+        var f
+        var data = _.map([2,3,4,5], function(c) {
+            var key = 'counter:' + method + ':' + c + ':' + endpoint;
+            var d = window.data.counters[method + ':' + c + ':' + endpoint];
+            if (d && d[0]) {
+              d[0].status = [2,3,4,5][c]
+              f = _.map(d, function(e) { return [e[0], 0] })
+              window.f = f
+            }
+            return d || []
         });
+        _.each(data, function(d, i) {
+            if (!d[0])
+            data[i] = f.slice()
+            data[i][0] = data[i][0].slice()
+            data[i][0].status = [2,3,4,5][i]
+        })
+        resGraph(e.key, e.index + e.offset, data);
+        // vis.render()
+        // setTimeout(next, 1);
+        next()
     } else {
         // For 5XX
-        statsny.getSimpleGraphData(method, parseInt(e.key), function(data) {
-            resGraph(e.key, e.index + e.offset, data);
-            vis.render()
-            setTimeout(next, 1);
-        });
+        var key = 'counter:' + e.key
+        var data = window.data.counters[e.key] || [];
+        if (data && data[0]) data[0].status = parseInt(e.key)
+        data = [data]
+        resGraph(e.key, e.index + e.offset, data);
+        // vis.render()
+        next()
+        // setTimeout(next, 1);
+        // statsny.getSimpleGraphData(method, parseInt(e.key), function(data) {
+        //     resGraph(e.key, e.index + e.offset, data);
+        //     vis.render()
+        //     setTimeout(next, 1);
+        // });
     }
 }
 setInterval(refresh, 10000);
