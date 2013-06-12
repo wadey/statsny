@@ -19,7 +19,7 @@
 </div>
 <input id="autorefresh" name="autorefresh" value="autorefresh" type="checkbox" /><label for="autorefresh">autorefresh</label>
 <div id="center"><div id="fig">
-    <script type="text/javascript+protovis">
+    <script type="text/javascript">
 /* Sizing and scales. */
 
     function checkNaN(f) {
@@ -59,7 +59,7 @@ function resGraph(key, index, data) {
     function findMax() {
         // Find the max of the sums at each y value
         return _.max(_.map(data[0], function(e, i) {
-            return _.reduce(data, function(sum, d) { return sum + d[i][1] }, 0);
+            return _.reduce(data, function(sum, d) { return sum + (d[i] ? d[i][1] : 0) }, 0);
         }));
     }
 
@@ -95,18 +95,18 @@ function resGraph(key, index, data) {
     g._index = index;
 
     // The area with top line.
-    g.top(function(d) g._index * bh - 4)
+    g.top(function(d) {return g._index * bh - 4})
         .height(bh)
         .left(-gw)
-        .data(function() g._data)
+        .data(function() {return g._data})
 
-    g._l.layers(function() g._data)
+    g._l.layers(function() {return g._data})
         //.top(function(d) index * bh + 10)
-        .x(function(d) gx(d[0]))
-        .y(function(d) gy(d[1]))
+        .x(function(d) {return gx(d[0])})
+        .y(function(d) {return gy(d[1])})
         .bottom(2)
 
-    g._a.fillStyle(function(d) colors[d.status])
+    g._a.fillStyle(function(d) {return colors[d.status]})
         //.strokeStyle(function() {return this.fillStyle().alpha(.5)})
         //.lineWidth(0.1)
 }
@@ -115,65 +115,65 @@ function resGraph(key, index, data) {
 var vis = new pv.Panel()
     .def("i", -1)
     .width(w)
-    .height(function() h)
+    .height(function() {return h})
     .margin(20)
     .left(lw + gw);
 
 /* Second lines. */
 vis.add(pv.Rule)
     .data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    .left(function(d) x(d * 1000) + 1)
+    .left(function(d) {return x(d * 1000) + 1})
     .top(0).bottom(20)
     .lineWidth(2).strokeStyle("grey")
   .anchor("bottom").add(pv.Label)
-    .text(function(d) d + "s");
+    .text(function(d) {return d + "s"});
 
 /* MS lines. */
 vis.add(pv.Rule)
     .data([1, 2, 3, 4, 5, 6, 7, 8, 9])
-    .left(function(d) x(d * 100) + 1)
+    .left(function(d) {return x(d * 100) + 1})
     .top(0).bottom(20)
     .lineWidth(2).strokeStyle("lightgrey")
   .anchor("bottom").add(pv.Label)
-    .text(function(d) "." + d);
+    .text(function(d) {return "." + d});
 
 
 var bar = vis.add(pv.Bar)
     .data([])
-    .top(function(d) (this.index + d.offset) * bh + 10)
+    .top(function(d) {return (this.index + d.offset) * bh + 10})
     .height(bh - 22)
-    .width(function(d) x(d.p999))
-    .fillStyle(function(d) c4(d.p999))
-    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
+    .width(function(d) {return x(d.p999)})
+    .fillStyle(function(d) {return c4(d.p999)})
+    .title(function(d) {return "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms"})
 
 bar.add(pv.Bar)
-    .top(function(d) (this.index + d.offset) * bh + 9)
+    .top(function(d) {return (this.index + d.offset) * bh + 9})
     .height(bh - 20)
-    .width(function(d) x(d.p99))
-    .fillStyle(function(d) c3(d.p99))
-    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
+    .width(function(d) {return x(d.p99)})
+    .fillStyle(function(d) {return c3(d.p99)})
+    .title(function(d) {return "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms"})
 
 bar.add(pv.Bar)
-    .top(function(d) (this.index + d.offset) * bh + 5)
+    .top(function(d) {return (this.index + d.offset) * bh + 5})
     .height(bh - 12)
-    .width(function(d) x(d.p75))
-    .fillStyle(function(d) c2(d.p75))
-    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
+    .width(function(d) {return x(d.p75)})
+    .fillStyle(function(d) {return c2(d.p75)})
+    .title(function(d) {return "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms"})
 
 bar.add(pv.Bar)
-    .top(function(d) (this.index + d.offset) * bh + 3)
+    .top(function(d) {return (this.index + d.offset) * bh + 3})
     .height(bh - 8)
-    .width(function(d) x(d.p50))
-    .fillStyle(function(d) c1(d.p50))
-    .title(function(d) "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms")
+    .width(function(d) {return x(d.p50)})
+    .fillStyle(function(d) {return c1(d.p50)})
+    .title(function(d) {return "50%: "+d.p50+"ms\n75%: "+d.p75+"ms\n99%: "+d.p99+"ms\n99.9%:" + d.p999 + "ms"})
 
 bar.anchor("left").add(pv.Label)
     .left(-gw)
     .font("bold 12px menlo,monospace")
     .textAlign("right")
     .textBaseline("middle")
-    .textStyle(function(e) cl(e))
-    .text(function(d) d.name + " (" + d.count + ")")
+    .textStyle(function(e) {return cl(e)})
+  .text(function(d) {return d.name + " (" + d.count + ")"})
 
 // bar.anchor("left").add(pv.Label)
 //     .left(w)
@@ -186,7 +186,7 @@ bar.anchor("left").add(pv.Label)
 // 
 bar.add(pv.Panel)
     .left(-(gw+lw))
-    .top(function(d) (this.index + d.offset) * bh)
+    .top(function(d) {return (this.index + d.offset) * bh})
     .width(lw)
     .height(bh)
     .fillStyle("rgba(0,0,0,.001)")
@@ -235,7 +235,7 @@ function refresh(force) {
         // })
 
         // TODO: use jquery or underscore
-        for (k in timings) {
+        for (var k in timings) {
             if (k.match(/^[A-Z]{1,6}:/)) {
                 name = k.replace(/^GET:/, '')
                         .replace(/stats:/, '')
@@ -262,7 +262,9 @@ function refresh(force) {
                     timings[k].offset += 3
                 }
                 var parts = k.split(/:/)
-                if (data.counters[parts[0] + ':5:' + parts.slice(1).join(':')]) {
+                var errorsKey = parts[0] + ':5:' + parts.slice(1).join(':')
+                var errors = data.counters[errorsKey]
+                if (errors && _.some(errors, function(d) { return d[1] > 0 })) {
                     timings[k].has5xx = true
                 }
                 if (timings[k].count > 0) {
@@ -334,13 +336,12 @@ function drawCounterGraphs(e, next) {
         //     console.log('data',data)
         // })
         var f
-        var data = _.map([2,3,4,5], function(c) {
+        var data = _.map([2,3,4,5], function(c,i) {
             var key = 'counter:' + method + ':' + c + ':' + endpoint;
             var d = window.data.counters[method + ':' + c + ':' + endpoint];
             if (d && d[0]) {
-              d[0].status = [2,3,4,5][c]
+              d[0].status = [2,3,4,5][i]
               f = _.map(d, function(e) { return [e[0], 0] })
-              window.f = f
             }
             return d || []
         });
@@ -348,13 +349,15 @@ function drawCounterGraphs(e, next) {
           if (window.console) console.log("NO DATA FOR", e)
           return next()
         }
-        _.each(data, function(d, i) {
-            if (!d[0] && f) {
-              data[i] = f.slice()
-              data[i][0] = data[i][0].slice()
-              data[i][0].status = [2,3,4,5][i]
+        var data = _.map(data, function(d, i) {
+            if (!d[0]) {
+              d = f.slice()
+              d[0] = [f[0][0], f[0][1]]
+              d[0].status = [2,3,4,5][i]
             }
+            return d
         })
+        // console.log(e.key, data)
         resGraph(e.key, e.index + e.offset, data);
         // vis.render()
         // setTimeout(next, 1);
