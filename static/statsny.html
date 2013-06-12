@@ -236,7 +236,7 @@ function refresh(force) {
 
         // TODO: use jquery or underscore
         for (k in timings) {
-            if (k.indexOf(':') >= 0 && k.indexOf(':') <= 6) {
+            if (k.match(/^[A-Z]{1,6}:/)) {
                 name = k.replace(/^GET:/, '')
                         .replace(/stats:/, '')
                         .replace(/^([A-Z]+):/, '$1 ')
@@ -344,11 +344,16 @@ function drawCounterGraphs(e, next) {
             }
             return d || []
         });
+        if (!f) {
+          if (window.console) console.log("NO DATA FOR", e)
+          return next()
+        }
         _.each(data, function(d, i) {
-            if (!d[0])
-            data[i] = f.slice()
-            data[i][0] = data[i][0].slice()
-            data[i][0].status = [2,3,4,5][i]
+            if (!d[0] && f) {
+              data[i] = f.slice()
+              data[i][0] = data[i][0].slice()
+              data[i][0].status = [2,3,4,5][i]
+            }
         })
         resGraph(e.key, e.index + e.offset, data);
         // vis.render()
