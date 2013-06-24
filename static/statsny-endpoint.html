@@ -63,7 +63,7 @@ function fetchResponses(key, elem, endpoint) {
                     } else {
                         if (k === "ip") {
                             ul.append($('<li>').text(k + ": ").append($("<a>")
-                                    .attr('href', 'http://dl.dropbox.com/u/119351/ipmap.html#' + v)
+                                    .attr('href', 'http://dl.dropboxusercontent.com/u/119351/ipmap.html#' + v)
                                     .text(JSON.stringify(v))));
                         } else if (k == "elapsed") {
                             span.text(span.text() + " - " + JSON.stringify(v) + "ms")
